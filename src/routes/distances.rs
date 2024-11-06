@@ -1,10 +1,29 @@
 pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
-    // Euclidean distance
+    // Ensure the vectors are of the same length
+    assert!(vec1.len() == vec2.len(), "Vectors must be of equal length");
+
     let mut fl_dist: f32 = 0.0;
-    for vec_index in 0..(vec1.len()) {
-        fl_dist += (&vec1[vec_index] - vec2[vec_index]).powf(2.0);
+    for vec_index in 0..vec1.len() {
+        let i = vec1[vec_index];
+        let j = vec2[vec_index];
+        let mut result: f32;
+
+        unsafe {
+            asm!(
+                "movss xmm0, {0}",      // Load i into xmm0
+                "movss xmm1, {1}",      // Load j into xmm1
+                "subss xmm0, xmm1",     // xmm0 = xmm0 - xmm1 (i - j)
+                "mulss xmm0, xmm0",     // xmm0 = xmm0 * xmm0 ((i - j) ^ 2)
+                "movss {2}, xmm0",      // Store result back into result
+                in(xmm_reg) i,
+                in(xmm_reg) j,
+                out(xmm_reg) result,
+            );
+        }
+
+        fl_dist += result;
     }
-    return fl_dist;
+    fl_dist.sqrt()
 }
 
 // pub fn manhattan(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
