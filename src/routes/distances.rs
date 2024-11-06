@@ -1,3 +1,6 @@
+use std::arch::asm;
+
+
 pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
     // Ensure the vectors are of the same length
     assert!(vec1.len() == vec2.len(), "Vectors must be of equal length");
