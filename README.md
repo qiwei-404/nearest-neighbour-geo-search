@@ -32,14 +32,16 @@ Response format is JSON:
 Demo.py should yield results on 10k records in this output using the words_subset.data file:
 
 ```
+Running exhaustive seach 100 times
 times for exhaustive search
-max time taken 0:00:00.023136
-min time taken 0:00:00.013079
-median time taken 0:00:00.013513
+max time taken 0:00:00.011376
+min time taken 0:00:00.006734
+median time taken 0:00:00.007108
+Running approximate seach 1000 times
 times for approximate search
-max time taken 0:00:00.001968
-min time taken 0:00:00.001162
-median time taken 0:00:00.001391
+max time taken 0:00:00.001993
+min time taken 0:00:00.000991
+median time taken 0:00:00.001192
 ```
 
 ## Caveats
