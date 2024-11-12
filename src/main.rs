@@ -18,6 +18,7 @@ async fn main() -> std::io::Result<()> {
         .app_data(data.clone())
         .service(routes::search)
         .service(routes::search_ann)
+        .service(routes::get_by_id)
     )
     .bind(("127.0.0.1", port)).unwrap()
     .run()
