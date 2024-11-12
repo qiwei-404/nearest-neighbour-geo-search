@@ -12,6 +12,7 @@ struct KeyDist {
     key: String,
 }
 
+
 #[post("/get_by_id")]
 pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::NamedSearch>) -> impl Responder {
     let amount_of_results: usize = item.amount_of_results.parse().unwrap();
@@ -67,8 +68,9 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData
 
 }
 
+
 #[post("/search")]
-pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonRequest>) -> impl Responder {
+pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonDistSearch>) -> impl Responder {
     // Calculate distances
     let mut results: Vec<helper_structs::Item> = Vec::<helper_structs::Item>::new();
     let mut fl_dist: f32;
@@ -108,7 +110,7 @@ pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>,
 
 
 #[post("/search_ann")]
-pub async fn search_ann(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonRequest>) -> impl Responder {
+pub async fn search_ann(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonDistSearch>) -> impl Responder {
     // Calculate distances
     let mut results: Vec<helper_structs::Item> = Vec::<helper_structs::Item>::new();
     let mut fl_dist: f32;
@@ -128,8 +130,6 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, get_data::SearchDat
         for index in 0..app_state[&key].storage.len() {
             fl_dist = distances::dist(&item.vector, &app_state[&key].storage[index]);
             haver_dist = distances::haversine(&item.geoc, &app_state[&key].geo[index]);
-            // if fl_dist < 17400000.0 { //  && haver_dist < item.geo_threshold {
-            // if fl_dist < item.vec_threshold {
             if fl_dist < item.vec_threshold  && haver_dist < item.geo_threshold {
                 results.push(helper_structs::Item{
                     id: app_state[&key].ids[index].clone(),
