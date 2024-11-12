@@ -12,7 +12,60 @@ struct KeyDist {
     key: String,
 }
 
+#[post("/get_by_id")]
+pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::NamedSearch>) -> impl Responder {
+    let amount_of_results: usize = item.amount_of_results.parse().unwrap();
+    let mut result: Vec::<f32> = Vec::<f32>::new();
+    let mut found = false;
+    let mut results: Vec<helper_structs::Item> = Vec::<helper_structs::Item>::new();
 
+    // get a single item
+    for key in app_state.keys() {
+        for index in 0..app_state[&key.to_owned()].ids.len() {
+            if &app_state[&key.to_owned()].ids[index] == &item.item_id {
+                result = app_state[&key.to_owned()].storage[index].clone();
+                found = true;
+                break;
+            }
+        }
+        if found {
+            break;
+        }
+    }
+
+    // use that item on an ANN search
+    let mut key_list: Vec::<KeyDist> = Vec::<KeyDist>::new();
+    for key in app_state.keys() {
+        key_list.push(KeyDist{
+            distance: distances::dist(&result, &app_state[key].centroid),
+            key: key.to_owned()
+        });
+    }
+    key_list.sort_by(|a, b| b.distance.partial_cmp(&a.distance).unwrap());
+
+    let top_5_percent = key_list.len() / 20;
+    let mut fl_dist;
+    for counter in 0..top_5_percent {
+        let key = key_list[counter].key.clone();
+        for index in 0..app_state[&key].storage.len() {
+            fl_dist = distances::dist(&result, &app_state[&key].storage[index]);
+            results.push(helper_structs::Item{
+                id: app_state[&key].ids[index].clone(),
+                geo_dist: 0.0,
+                dist: fl_dist,
+            });
+        }
+    }
+
+    // Sorting based on smallest vector distance
+    glidesort::sort_by(&mut results, |a, b| {
+        a.dist.partial_cmp(&b.dist).unwrap()
+    });
+
+    let output: Vec<helper_structs::Id> = results.iter().map(|item| helper_structs::Id{id: item.id.clone()}).collect();
+    Ok::<web::Json<Vec<helper_structs::Id>>, Error>(web::Json(output[..amount_of_results].to_vec()))
+
+}
 
 #[post("/search")]
 pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonRequest>) -> impl Responder {
