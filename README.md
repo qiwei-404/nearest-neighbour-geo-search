@@ -1,5 +1,5 @@
 # SkiDB
-## Nearest Neighbor Search Server
+## Spatial Knowledge Indexing DataBase
 
 Carry out nearest neighbor search using JSON through a web-server application, written in Rustlang in BC, Canada.
 
