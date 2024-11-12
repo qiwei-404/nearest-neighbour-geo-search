@@ -1,6 +1,9 @@
-# Nearest Neighbor Search Server
+# SkiDB
+## Nearest Neighbor Search Server
 
 Carry out nearest neighbor search using JSON through a web-server application, written in Rustlang in BC, Canada.
+
+![skiDB](https://github.com/andrewmatte/skiDB/blob/main/Screenshot%20from%202024-11-11%2019-55-42.png)
 
 ## Uses
 
