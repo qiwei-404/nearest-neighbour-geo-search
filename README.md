@@ -27,8 +27,14 @@ Request format is JSON to /search or /search_ann:
 "limit_results": int}
 ```
 
+Request format is JSON to /get_by_id:
+```
+{"item_id": String,
+"amount_of_results": int}
+```
+
 Response format is JSON:
-``` {"items: [{"id": str, "geo_dist": float, "dist": float}, ...]} ```
+``` {"items: [{"id": str}, {"id": str}, ...]} ```
 
 ## Benchmarks
 
