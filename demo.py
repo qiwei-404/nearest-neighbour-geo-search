@@ -15,7 +15,7 @@ proc = subprocess.Popen(
 
 # here we are doing a bare sleep because we dont' know how long it's going to take to start the webserver.
 print("Building application. If it breaks here, build with `cargo build --release` before running this demo.")
-time.sleep(10)
+time.sleep(30)
 
 VECTOR_DIMENSIONS = 512
 
@@ -25,19 +25,18 @@ geo_threshold = 9999999
 
 # this next line means search by vector instead of by geo-coordinate
 sort_by_vec = "1"
-vector = [random() for _ in range(VECTOR_DIMENSIONS)]
 times = []
 # we carry out the search 100 times to test its capacity
-data = {
-    "sort_by_vec": sort_by_vec,
-    "geoc": geoc,
-    "vector": vector,
-    "geo_threshold": geo_threshold,
-    "vec_threshold": 10000000,
-    "limit_results": 50,
-}
 print("Running exhaustive seach 100 times")
 for i in range(100):
+    data = {
+            "sort_by_vec": sort_by_vec,
+            "geoc": geoc,
+            "vector": [random() for _ in range(VECTOR_DIMENSIONS)],
+            "geo_threshold": geo_threshold,
+            "vec_threshold": 10000000,
+            "limit_results": 50,
+        }
     start = datetime.now()
     response = requests.post(
         "http://localhost:8989/search",
@@ -58,6 +57,14 @@ print("Running approximate seach 1000 times")
 times = []
 # we carry out the search 100 times to test its capacity
 for i in range(1000):
+    data = {
+        "sort_by_vec": sort_by_vec,
+        "geoc": geoc,
+        "vector": [random() for _ in range(VECTOR_DIMENSIONS)],
+        "geo_threshold": geo_threshold,
+        "vec_threshold": 10000000,
+        "limit_results": 50,
+    }
     start = datetime.now()
     response = requests.post("http://localhost:8989/search_ann", json=data)
     end = datetime.now()

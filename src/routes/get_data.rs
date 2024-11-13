@@ -1,76 +1,35 @@
 use std::collections::HashMap;
 use std::str;
-use kmeans::*;
 use std::string::String;
+use super::cluster_indexing::cluster_indexing;
+use super::helper_structs::{AssignmentsAndClusters, Cluster, SearchData};
 
 
-pub fn kmeans(input_data: HashMap<String, SearchData>) -> HashMap<String, SearchData> {
-    let mut keys_map = Vec::<String>::new();
-    let mut vecs_map = Vec::<f32>::new();
-    let mut geo_map = Vec::<Vec::<f32>>::new();
-    let mut vecs = Vec::<Vec::<f32>>::new();
-    for key in input_data.keys() {
-        for id in &input_data[key].ids {
-            keys_map.push(id.to_owned());
-        }
-        for vec in &input_data[key].storage {
-            vecs.push(vec.to_owned());
-            for dim in vec {
-                vecs_map.push(dim.to_owned());
-            }
-        }
-        for geo in &input_data[key].geo {
-            geo_map.push(geo.to_owned());
-        }
+pub fn index_data(input_data: &SearchData) -> HashMap<String, SearchData> {
+    let assignments_and_clusters: AssignmentsAndClusters = cluster_indexing(&input_data);
+    let mut search_data: HashMap<String, SearchData> = HashMap::new();
+    for cluster_index in 0..assignments_and_clusters.clusters.len() {
+        let mut storage: Vec<Vec<f32>> = Vec::new();
+        let mut geo: Vec<Vec<f32>> = Vec::new();
+        let mut ids = assignments_and_clusters.clusters[cluster_index].ids.clone();
+        search_data.insert(cluster_index.to_string(), SearchData {
+            storage: storage,
+            ids: ids,
+            geo: geo,
+            centroid: assignments_and_clusters.clusters[cluster_index].centroid.clone(),
+        });
     }
-    let sample_dims = vecs[0].len();
-    let sample_count = (vecs_map.len()/sample_dims) as usize;
-    let k = (sample_count as f64).sqrt() as usize;
-    let max_iter = 100;
-
-    // Calculate kmeans, using kmean++ as initialization-method
-    let kmean = KMeans::new(vecs_map, sample_count, sample_dims);
-    let clusters = kmean.kmeans_lloyd(k, max_iter, KMeans::init_kmeanplusplus, &KMeansConfig::default());
-
-    let mut output = HashMap::<String, SearchData>::new();
-    let mut count = 0;
-    let mut count_2 = 0;
-    for assignment in clusters.assignments {
-        if output.contains_key(assignment.to_string().as_str()) {
-            if let Some(tmp_search_data) = output.get_mut(assignment.to_string().as_str()) {
-                tmp_search_data.storage.push(vecs[count].clone());
-                tmp_search_data.ids.push(keys_map[count].to_string());
-                let mut new_geo = Vec::<f32>::new();
-                for coord in geo_map[count].clone().into_iter() {
-                    new_geo.push(coord)
-                }
-                tmp_search_data.geo.push(new_geo);
-            }
-        } else {
-            let mut storage = Vec::<Vec::<f32>>::new();
-            let mut ids = Vec::<String>::new();
-            let mut geo = Vec::<Vec::<f32>>::new();
-            storage.push(vecs[count].to_vec());
-            ids.push(keys_map[count].clone());
-            geo.push(geo_map[count].clone());
-            let num_dims_in_vec = storage[0].len();
-            let search_data = SearchData{
-                storage: storage,
-                ids: ids,
-                geo: geo,
-                // centroid: clusters.centroids[count]
-                centroid: clusters.centroids[(count_2*num_dims_in_vec)..((count_2+1)*num_dims_in_vec)].to_vec()
-            };
-            output.insert(assignment.to_string(), search_data);
-            count_2 += 1;
-        }
-        count += 1;
+    for move_index in 0..assignments_and_clusters.moves.len() {
+        let search_index: &String = &assignments_and_clusters.moves[move_index].new_cluster_index.to_string();
+        search_data.get_mut(search_index).unwrap().storage.push(input_data.storage[move_index].clone());
+        search_data.get_mut(search_index).unwrap().ids.push(input_data.ids[move_index].clone());
+        search_data.get_mut(search_index).unwrap().geo.push(input_data.geo[move_index].clone());
     }
-    return output;
+    return search_data;
 }
 
 
-pub fn get_data(filename: String, vec_size: usize) -> HashMap<String, SearchData> {
+pub fn get_data(filename: String, vec_size: usize) -> SearchData {
     // This accepts a filename and returns search data
     // It (used to but it commented out) checks whether there is 2x RAM of the file available
     // If so, it uses th RAM
@@ -84,15 +43,8 @@ pub fn get_data(filename: String, vec_size: usize) -> HashMap<String, SearchData
     // }
 }
 
-// Data format for search
-pub struct SearchData {
-    pub storage: Vec<Vec<f32>>,
-    pub ids: Vec<String>,
-    pub geo: Vec<Vec<f32>>,
-    pub centroid: Vec<f32>,
-}
 
-fn load_bin_to_vec(vectors_filename: &String, vec_size: usize) -> HashMap<String, SearchData> {
+fn load_bin_to_vec(vectors_filename: &String, vec_size: usize) -> SearchData {
     // This uses 2x the RAM of the filesize temporarily
     // to read in the data to RAM
     let bytes: Vec<u8> = std::fs::read(vectors_filename).unwrap();
@@ -103,13 +55,22 @@ fn load_bin_to_vec(vectors_filename: &String, vec_size: usize) -> HashMap<String
     println!("{}", nb_rows);
     let mut id: &str;
     let mut storage: Vec<f32>;
+    let mut centroid: Vec<f32>;
     let mut geo: Vec<f32>;
     let mut row_start: usize;
     let float_size: usize = 4;
     let mut tmp_u8: [u8; 4];
     let mut vec_start: usize;
-    let mut data: HashMap<String, SearchData> = HashMap::new();
-    let mut partner_id: String;
+    let mut tmp_ids = Vec::<String>::new();
+    let mut tmp_storage = Vec::<Vec<f32>>::new();
+    let mut tmp_geo = Vec::<Vec<f32>>::new();
+    let mut tmp_centroid = Vec::<f32>::new();
+    let mut data: SearchData = SearchData {
+        storage: tmp_storage,
+        ids: tmp_ids,
+        geo: tmp_geo,
+        centroid: tmp_centroid,
+    };
 
     for row_index in 0..(nb_rows) {
         // Read ID
@@ -141,26 +102,9 @@ fn load_bin_to_vec(vectors_filename: &String, vec_size: usize) -> HashMap<String
             geo.push(f32::from_ne_bytes(tmp_u8));
         }
 
-        // row_start += 8;
-        partner_id = "123".to_owned();
-        let tmp_pid = partner_id.clone();
-
-        if !data.contains_key(&partner_id.clone()) {
-            let mut tmp_ids = Vec::<String>::new();
-            let mut tmp_storage = Vec::<Vec<f32>>::new();
-            let mut tmp_geo = Vec::<Vec<f32>>::new();
-            let mut tmp_centroid = Vec::<f32>::new();
-            let mut tmp_data = SearchData {
-                ids: tmp_ids,
-                storage: tmp_storage,
-                geo: tmp_geo,
-                centroid: tmp_centroid
-            };
-            data.insert(partner_id, tmp_data);
-        }
-        data.get_mut(&tmp_pid).unwrap().ids.push(id.to_owned());
-        data.get_mut(&tmp_pid).unwrap().storage.push(storage);
-        data.get_mut(&tmp_pid).unwrap().geo.push(geo);
+        data.ids.push(id.to_owned());
+        data.storage.push(storage);
+        data.geo.push(geo);
     }
 
     return data;

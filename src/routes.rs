@@ -1,7 +1,8 @@
 use actix_web::{Responder, web, post};
 use glidesort;
-mod helper_structs;
+pub mod helper_structs;
 mod distances;
+mod cluster_indexing;
 pub mod get_data;
 use std::collections::HashMap;
 use actix_web::Error;
@@ -14,7 +15,7 @@ struct KeyDist {
 
 
 #[post("/get_by_id")]
-pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::NamedSearch>) -> impl Responder {
+pub async fn get_by_id(app_state: web::Data<HashMap<String, helper_structs::SearchData>>, item: web::Json<helper_structs::NamedSearch>) -> impl Responder {
     let amount_of_results: usize = item.amount_of_results.parse().unwrap();
     let mut result: Vec::<f32> = Vec::<f32>::new();
     let mut found = false;
@@ -38,7 +39,7 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData
     let mut key_list: Vec::<KeyDist> = Vec::<KeyDist>::new();
     for key in app_state.keys() {
         key_list.push(KeyDist{
-            distance: distances::dist(&result, &app_state[key].centroid),
+            distance: distances::manhattan(&result, &app_state[key].centroid),
             key: key.to_owned()
         });
     }
@@ -49,7 +50,7 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData
     for counter in 0..top_5_percent {
         let key = key_list[counter].key.clone();
         for index in 0..app_state[&key].storage.len() {
-            fl_dist = distances::dist(&result, &app_state[&key].storage[index]);
+            fl_dist = distances::manhattan(&result, &app_state[&key].storage[index]);
             results.push(helper_structs::Item{
                 id: app_state[&key].ids[index].clone(),
                 geo_dist: 0.0,
@@ -70,7 +71,7 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, get_data::SearchData
 
 
 #[post("/search")]
-pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonDistSearch>) -> impl Responder {
+pub async fn search(app_state: web::Data<HashMap<String, helper_structs::SearchData>>, item: web::Json<helper_structs::JsonDistSearch>) -> impl Responder {
     // Calculate distances
     let mut results: Vec<helper_structs::Item> = Vec::<helper_structs::Item>::new();
     let mut fl_dist: f32;
@@ -78,7 +79,7 @@ pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>,
 
     for key in app_state.keys() {
         for index in 0..app_state[&key.to_owned()].storage.len() {
-            fl_dist = distances::dist(&item.vector, &app_state[&key.to_owned()].storage[index]);
+            fl_dist = distances::manhattan(&item.vector, &app_state[&key.to_owned()].storage[index]);
             haver_dist = distances::haversine(&item.geoc, &app_state[&key.to_owned()].geo[index]);
             if fl_dist < item.vec_threshold && haver_dist < item.geo_threshold {
                 results.push(helper_structs::Item{
@@ -110,7 +111,7 @@ pub async fn search(app_state: web::Data<HashMap<String, get_data::SearchData>>,
 
 
 #[post("/search_ann")]
-pub async fn search_ann(app_state: web::Data<HashMap<String, get_data::SearchData>>, item: web::Json<helper_structs::JsonDistSearch>) -> impl Responder {
+pub async fn search_ann(app_state: web::Data<HashMap<String, helper_structs::SearchData>>, item: web::Json<helper_structs::JsonDistSearch>) -> impl Responder {
     // Calculate distances
     let mut results: Vec<helper_structs::Item> = Vec::<helper_structs::Item>::new();
     let mut fl_dist: f32;
@@ -119,16 +120,16 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, get_data::SearchDat
     let mut key_list: Vec::<KeyDist> = Vec::<KeyDist>::new();
     for key in app_state.keys() {
         key_list.push(KeyDist{
-            distance: distances::dist(&item.vector, &app_state[key].centroid),
+            distance: distances::manhattan(&item.vector, &app_state[key].centroid),
             key: key.to_owned()
         });
     }
     key_list.sort_by(|a, b| b.distance.partial_cmp(&a.distance).unwrap());
-    let top_5_percent = key_list.len() / 20;
+    let top_5_percent = (key_list.len() as f32 / 200.0).ceil() as usize;
     for counter in 0..top_5_percent {
         let key = key_list[counter].key.clone();
         for index in 0..app_state[&key].storage.len() {
-            fl_dist = distances::dist(&item.vector, &app_state[&key].storage[index]);
+            fl_dist = distances::manhattan(&item.vector, &app_state[&key].storage[index]);
             haver_dist = distances::haversine(&item.geoc, &app_state[&key].geo[index]);
             if fl_dist < item.vec_threshold  && haver_dist < item.geo_threshold {
                 results.push(helper_structs::Item{

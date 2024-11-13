@@ -1,6 +1,5 @@
 use std::arch::asm;
 
-
 pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
     // Ensure the vectors are of the same length
     assert!(vec1.len() == vec2.len(), "Vectors must be of equal length");
@@ -17,7 +16,7 @@ pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
                 "movss xmm1, {1}",      // Load j into xmm1
                 "subss xmm0, xmm1",     // xmm0 = xmm0 - xmm1 (i - j)
                 "mulss xmm0, xmm0",     // xmm0 = xmm0 * xmm0 ((i - j) ^ 2)
-                "movss {2}, xmm0",      // Store result back into result
+                "movss {2}, xmm0",      // Store xmm0 back into result
                 in(xmm_reg) i,
                 in(xmm_reg) j,
                 out(xmm_reg) result,
@@ -29,14 +28,14 @@ pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
     fl_dist.sqrt()
 }
 
-// pub fn manhattan(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
-//     // Manhattan distance
-//     let mut fl_dist: f32 = 0.0;
-//     for vec_index in 0..(vec1.len()) {
-//         fl_dist += (&vec1[vec_index] - vec2[vec_index]).abs();
-//     }
-//     return fl_dist;
-// }
+pub fn manhattan(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
+    // Manhattan distance
+    let mut fl_dist: f32 = 0.0;
+    for vec_index in 0..(vec1.len()) {
+        fl_dist += (&vec1[vec_index] - vec2[vec_index]).abs();
+    }
+    return fl_dist;
+}
 
 pub fn haversine(geo1: &Vec<f32>, geo2: &Vec<f32>) -> f32 {
     // geo distance in KMs

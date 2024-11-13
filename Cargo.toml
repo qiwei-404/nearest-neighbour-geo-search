@@ -1,6 +1,6 @@
 [package]
-name = "nearest-neighbor-search-server"
-version = "0.1.0"
+name = "ski_DB_"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -15,4 +15,3 @@ futures = "*"
 json = "*"
 sysinfo = "0.26.8"
 glidesort = "*"
-kmeans = "0.2.0"
