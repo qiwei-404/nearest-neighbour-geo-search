@@ -6,8 +6,6 @@ pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
 
     let mut fl_dist: f32 = 0.0;
     for vec_index in 0..vec1.len() {
-        let i = vec1[vec_index];
-        let j = vec2[vec_index];
         let mut result: f32;
 
         unsafe {
@@ -17,8 +15,8 @@ pub fn dist(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f32 {
                 "subss xmm0, xmm1",     // xmm0 = xmm0 - xmm1 (i - j)
                 "mulss xmm0, xmm0",     // xmm0 = xmm0 * xmm0 ((i - j) ^ 2)
                 "movss {2}, xmm0",      // Store xmm0 back into result
-                in(xmm_reg) i,
-                in(xmm_reg) j,
+                in(xmm_reg) vec1[vec_index],
+                in(xmm_reg) vec2[vec_index],
                 out(xmm_reg) result,
             );
         }

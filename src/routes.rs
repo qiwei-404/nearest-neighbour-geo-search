@@ -39,7 +39,7 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, helper_structs::Sear
     let mut key_list: Vec::<KeyDist> = Vec::<KeyDist>::new();
     for key in app_state.keys() {
         key_list.push(KeyDist{
-            distance: distances::manhattan(&result, &app_state[key].centroid),
+            distance: distances::dist(&result, &app_state[key].centroid),
             key: key.to_owned()
         });
     }
@@ -50,7 +50,7 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, helper_structs::Sear
     for counter in 0..top_5_percent {
         let key = key_list[counter].key.clone();
         for index in 0..app_state[&key].storage.len() {
-            fl_dist = distances::manhattan(&result, &app_state[&key].storage[index]);
+            fl_dist = distances::dist(&result, &app_state[&key].storage[index]);
             results.push(helper_structs::Item{
                 id: app_state[&key].ids[index].clone(),
                 geo_dist: 0.0,
@@ -64,8 +64,9 @@ pub async fn get_by_id(app_state: web::Data<HashMap<String, helper_structs::Sear
         a.dist.partial_cmp(&b.dist).unwrap()
     });
 
+    let result_size = std::cmp::min(results.len(), amount_of_results);
     let output: Vec<helper_structs::Id> = results.iter().map(|item| helper_structs::Id{id: item.id.clone()}).collect();
-    Ok::<web::Json<Vec<helper_structs::Id>>, Error>(web::Json(output[..amount_of_results].to_vec()))
+    Ok::<web::Json<Vec<helper_structs::Id>>, Error>(web::Json(output[..result_size].to_vec()))
 
 }
 
@@ -104,7 +105,8 @@ pub async fn search(app_state: web::Data<HashMap<String, helper_structs::SearchD
         });
     }
 
-    let results = helper_structs::Items{items: results.to_vec()[..item.limit_results].to_vec()};
+    let result_size = std::cmp::min(results.len(), item.limit_results);
+    let results = helper_structs::Items{items: results.to_vec()[..result_size].to_vec()};
 
     Ok::<web::Json<helper_structs::Items>, Error>(web::Json(results))
 }
@@ -120,7 +122,7 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, helper_structs::Sea
     let mut key_list: Vec::<KeyDist> = Vec::<KeyDist>::new();
     for key in app_state.keys() {
         key_list.push(KeyDist{
-            distance: distances::manhattan(&item.vector, &app_state[key].centroid),
+            distance: distances::dist(&item.vector, &app_state[key].centroid),
             key: key.to_owned()
         });
     }
@@ -129,7 +131,7 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, helper_structs::Sea
     for counter in 0..top_5_percent {
         let key = key_list[counter].key.clone();
         for index in 0..app_state[&key].storage.len() {
-            fl_dist = distances::manhattan(&item.vector, &app_state[&key].storage[index]);
+            fl_dist = distances::dist(&item.vector, &app_state[&key].storage[index]);
             haver_dist = distances::haversine(&item.geoc, &app_state[&key].geo[index]);
             if fl_dist < item.vec_threshold  && haver_dist < item.geo_threshold {
                 results.push(helper_structs::Item{
@@ -154,7 +156,8 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, helper_structs::Sea
         });
     }
 
-    let results = helper_structs::Items{items: results.to_vec()[..item.limit_results].to_vec()};
+    let result_size = std::cmp::min(results.len(), item.limit_results);
+    let results = helper_structs::Items{items: results.to_vec()[..result_size].to_vec()};
 
     Ok::<web::Json<helper_structs::Items>, Error>(web::Json(results))
 }

@@ -39,6 +39,6 @@ def read_all(filename='data.bin'):
     return output
 
 
-def save_all(list_of_lists, filename='data.bin'):
+def save_all(list_of_lists):
     for item in list_of_lists:
         save(item[0], item[1])

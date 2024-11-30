@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use super::distances::{manhattan, dist};
+use super::distances::manhattan;
 use super::helper_structs::{Cluster, Move, AssignmentsAndClusters, SearchData};
 
 
