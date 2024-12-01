@@ -1,4 +1,4 @@
-use super::distances::manhattan;
+use super::distances::dist;
 use super::helper_structs::{Cluster, Move, AssignmentsAndClusters, SearchData};
 
 
@@ -27,7 +27,7 @@ pub fn cluster_indexing(input_data: &SearchData) -> AssignmentsAndClusters {
         let mut min_index: usize = 1;
         let mut min_dist: f32 = f32::MAX;
         for cluster_index in 0..cluster_count {
-            let new_dist = manhattan(
+            let new_dist = dist(
                 &(input_data.storage[traversal_index]),
                 &(clusters[cluster_index].centroid),
             );
@@ -73,7 +73,7 @@ pub fn cluster_indexing(input_data: &SearchData) -> AssignmentsAndClusters {
             // compare against every cluster
             let mut min_dist = f32::MAX;
             for cluster_index in 0..cluster_count {
-                let new_dist = manhattan(
+                let new_dist = dist(
                     &(input_data.storage[traversal_index]),
                     &(clusters[cluster_index as usize].centroid),
                 );
@@ -126,6 +126,13 @@ pub fn cluster_indexing(input_data: &SearchData) -> AssignmentsAndClusters {
         full_move_counter += 1;
         clusters = new_clusters;
     }
+    let centroids: Vec<String> = clusters.clone().into_iter().map(|c| c.centroid.into_iter().map(|f| f.to_string()).collect::<Vec<String>>().join(",")).collect();
+    let ids_to_join: Vec<String> = clusters.clone().into_iter().map(|c| c.ids.join(",")).collect();
+    // Write data to the file
+    let to_write: String = (0..(ids_to_join.len())).map(|c| centroids[c].clone() + "!" + &ids_to_join[c]).collect::<Vec<String>>().join("\n");
+    std::fs::write("indexes.dat", to_write).expect("Failed to write to the file");
+
+    // Close the file
     return AssignmentsAndClusters {
         moves: moves,
         clusters: clusters,

@@ -6,7 +6,12 @@ use super::helper_structs::{AssignmentsAndClusters, Cluster, SearchData};
 
 
 pub fn index_data(input_data: &SearchData) -> HashMap<String, SearchData> {
-    let assignments_and_clusters: AssignmentsAndClusters = cluster_indexing(&input_data);
+    let mut assignments_and_clusters: AssignmentsAndClusters;
+    assignments_and_clusters = match std::fs::read_to_string("indexes.dat") {
+        Ok(value) => reassemble_assignments_and_clusters(value),
+        Err(err) => cluster_indexing(&input_data),
+    };
+
     let mut search_data: HashMap<String, SearchData> = HashMap::new();
     for cluster_index in 0..assignments_and_clusters.clusters.len() {
         let mut storage: Vec<Vec<f32>> = Vec::new();
@@ -26,6 +31,24 @@ pub fn index_data(input_data: &SearchData) -> HashMap<String, SearchData> {
         search_data.get_mut(search_index).unwrap().geo.push(input_data.geo[move_index].clone());
     }
     return search_data;
+}
+
+
+fn reassemble_assignments_and_clusters(content: String) -> AssignmentsAndClusters {
+    let mut assignments_and_clusters: AssignmentsAndClusters;
+    let mut clusters: Vec<Cluster> = Vec::new();
+    
+    let mut lines = content.split("\n").into_iter().map(|line| {
+        let centroid_and_ids: Vec<&str> = line.split("!").collect();
+        let centroid: Vec<f32> = centroid_and_ids[0].split(",").collect::<Vec<&str>>().into_iter().map(|s| s.parse::<f32>().unwrap()).collect();
+        let mut ids: Vec<String> = Vec::new();
+        for chunk in centroid_and_ids[1..].join("!").chars().collect::<Vec<char>>().chunks(40) {
+            ids.push(chunk.iter().collect::<String>());
+        }
+        clusters.push(Cluster{ids:ids, centroid:centroid, vectors: Vec::<Vec<f32>>::new()})
+    });
+    println!("Reading from indexes.dat file.");
+    return AssignmentsAndClusters{moves: Vec::new(), clusters: Vec::new()};
 }
 
 

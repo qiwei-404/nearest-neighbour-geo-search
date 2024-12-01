@@ -33,6 +33,7 @@ pub struct Id {
     pub id: String,
 }
 
+#[derive(Clone)]
 pub struct Cluster {
     pub vectors: Vec<Vec<f32>>,
     pub ids: Vec<String>,

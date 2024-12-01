@@ -15,7 +15,8 @@ proc = subprocess.Popen(
 
 # here we are doing a bare sleep because we dont' know how long it's going to take to start the webserver.
 print("Building application. If it breaks here, build with `cargo build --release` before running this demo.")
-time.sleep(30)
+print("If this breaks, the port might be in use or the index might not be build yet. time.sleep(2) is running.")
+time.sleep(2)
 
 VECTOR_DIMENSIONS = 512
 

@@ -80,7 +80,7 @@ pub async fn search(app_state: web::Data<HashMap<String, helper_structs::SearchD
 
     for key in app_state.keys() {
         for index in 0..app_state[&key.to_owned()].storage.len() {
-            fl_dist = distances::manhattan(&item.vector, &app_state[&key.to_owned()].storage[index]);
+            fl_dist = distances::dist(&item.vector, &app_state[&key.to_owned()].storage[index]);
             haver_dist = distances::haversine(&item.geoc, &app_state[&key.to_owned()].geo[index]);
             if fl_dist < item.vec_threshold && haver_dist < item.geo_threshold {
                 results.push(helper_structs::Item{
