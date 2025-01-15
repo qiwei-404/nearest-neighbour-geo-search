@@ -8,7 +8,7 @@ import time
 outfile = open("outfile_" + str(datetime.now()), "w")
 
 proc = subprocess.Popen(
-    ["cargo", "run", "--release", "./words_subset.data", "8989", "512"],
+    ["cargo", "run", "./words_subset.data", "8989", "512"],
     stdout=outfile,
     stderr=outfile,
 )
@@ -35,8 +35,8 @@ for i in range(100):
             "geoc": geoc,
             "vector": [random() for _ in range(VECTOR_DIMENSIONS)],
             "geo_threshold": geo_threshold,
-            "vec_threshold": 10000000,
-            "limit_results": 50,
+            "vec_threshold": 1000000000,
+            "limit_results": 5,
         }
     start = datetime.now()
     response = requests.post(
@@ -56,15 +56,15 @@ print("median time taken", times[int(len(times) / 2)])
 
 print("Running approximate seach 1000 times")
 times = []
-# we carry out the search 100 times to test its capacity
+# we carry out the search 1000 times to test its capacity
 for i in range(1000):
     data = {
         "sort_by_vec": sort_by_vec,
         "geoc": geoc,
         "vector": [random() for _ in range(VECTOR_DIMENSIONS)],
         "geo_threshold": geo_threshold,
-        "vec_threshold": 10000000,
-        "limit_results": 50,
+        "vec_threshold": 1000000000,
+        "limit_results": 5,
     }
     start = datetime.now()
     response = requests.post("http://localhost:8989/search_ann", json=data)
@@ -77,5 +77,6 @@ times.sort(reverse=True)
 print("max time taken", times[0])
 print("min time taken", times[-1])
 print("median time taken", times[int(len(times) / 2)])
+
 
 proc.kill()

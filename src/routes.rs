@@ -1,4 +1,4 @@
-use actix_web::{Responder, web, post};
+use actix_web::{Responder, web, post, get};
 use glidesort;
 pub mod helper_structs;
 mod distances;
@@ -127,7 +127,7 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, helper_structs::Sea
         });
     }
     key_list.sort_by(|a, b| b.distance.partial_cmp(&a.distance).unwrap());
-    let top_5_percent = (key_list.len() as f32 / 200.0).ceil() as usize;
+    let top_5_percent = ((key_list.len() as f32).sqrt()).ceil() as usize;
     for counter in 0..top_5_percent {
         let key = key_list[counter].key.clone();
         for index in 0..app_state[&key].storage.len() {
@@ -161,4 +161,5 @@ pub async fn search_ann(app_state: web::Data<HashMap<String, helper_structs::Sea
 
     Ok::<web::Json<helper_structs::Items>, Error>(web::Json(results))
 }
-    
+
+

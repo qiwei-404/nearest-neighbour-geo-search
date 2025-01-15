@@ -11,8 +11,8 @@ async fn main() -> std::io::Result<()> {
     let vec_size = args[3].parse::<usize>().unwrap();
     println!("Getting data from {}", filename);
     let data = routes::get_data::get_data(filename, vec_size);
-    let data = routes::get_data::index_data(&data);
-    let data: web::Data<HashMap<String, routes::helper_structs::SearchData>> = web::Data::new(data);
+    let indexed_data = routes::get_data::index_data(&data);
+    let data: web::Data<HashMap<String, routes::helper_structs::SearchData>> = web::Data::new(indexed_data);
     println!("Data loaded, server started on {}", port);
     HttpServer::new(move || {
         App::new()
